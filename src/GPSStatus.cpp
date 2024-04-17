@@ -1,15 +1,11 @@
-#include "GPSLocation.h"
-
-#include <arpa/inet.h>
-#include <cstdint>
-#include <stdexcept>
 #include <cmath>
 
-#include <iostream>
-#include <iomanip>
+#include "GPSStatus.h"
 
-GPSLocation::Float32::NetworkView GPSLocation::Float32::Pack() {
-  GPSLocation::Float32::NetworkView view = { 0, 0, 0 };
+#include "EndianTranslation.h"
+
+GPSStatus::Float32::NetworkView GPSStatus::Float32::Pack() {
+  GPSStatus::Float32::NetworkView view = { 0, 0, 0 };
   view.negative = n < 0 ? -1 : 1;
   float nLocal = n * view.negative;  
   
@@ -21,10 +17,13 @@ GPSLocation::Float32::NetworkView GPSLocation::Float32::Pack() {
   view.digits = htonl(static_cast<uint32_t>(nLocal));
   view.exponent = htons(view.exponent);
 
+  view.updated = _updated;
+  view.valid = _valid;
+
   return view;
 }
 
-GPSLocation::Float32& GPSLocation::Float32::Unpack(GPSLocation::Float32::NetworkView view) {
+GPSStatus::Float32& GPSStatus::Float32::Unpack(GPSStatus::Float32::NetworkView view) {
   n = ntohl(view.digits);
   n *= view.negative;
   
@@ -32,39 +31,104 @@ GPSLocation::Float32& GPSLocation::Float32::Unpack(GPSLocation::Float32::Network
 
   n *= pow(10.0, view.exponent);
   
+  _valid = view.valid;
+  _updated = view.updated;
+
   return *this;
 }
 
-GPSLocation::Int32::NetworkView GPSLocation::Int32::Pack() {
-  GPSLocation::Int32::NetworkView view;
+
+GPSStatus::Int32::NetworkView GPSStatus::Int32::Pack() {
+  GPSStatus::Int32::NetworkView view;
   
   view.n = htonl(n);
   
+  view.updated = _updated;
+  view.valid = _valid;
+
   return view;
 }
 
-GPSLocation::Int32& GPSLocation::Int32::Unpack(GPSLocation::Int32::NetworkView view) {
+GPSStatus::Int32& GPSStatus::Int32::Unpack(GPSStatus::Int32::NetworkView view) {
   n = ntohl(view.n);
 
+  _valid = true;
+  _updated = true;
+
   return *this;
 }
 
-GPSLocation::NetworkView GPSLocation::Pack() {
-  GPSLocation::NetworkView view;
-  
+
+GPSStatus::Location::NetworkView GPSStatus::Location::Pack() {
+  GPSStatus::Location::NetworkView view;
+
   view.latitude = latitude.Pack();
   view.longitude = longitude.Pack();
-  view.altitude = altitude.Pack();
-  view.numSatellites = numSatellites.Pack();
-  
+
   return view;
 }
 
-GPSLocation& GPSLocation::Unpack(GPSLocation::NetworkView view) {
+GPSStatus::Location& GPSStatus::Location::Unpack(GPSStatus::Location::NetworkView view) {
   latitude.Unpack(view.latitude);
   longitude.Unpack(view.longitude);
-  altitude.Unpack(view.altitude);
-  numSatellites.Unpack(view.numSatellites);
-  
+
   return *this;
 }
+
+void GPSStatus::Location::MarkStale() {
+  latitude.MarkStale();
+  latitude.MarkStale();
+}
+
+void GPSStatus::Location::MarkInvalid() {
+  latitude.MarkInvalid();
+  longitude.MarkInvalid();
+}
+
+bool GPSStatus::Location::Valid() {
+  return latitude.Valid() && longitude.Valid();
+}
+
+bool GPSStatus::Location::Updated() {
+  return latitude.Updated() || longitude.Updated();
+}
+
+
+GPSStatus::NetworkView GPSStatus::Pack() {
+  GPSStatus::NetworkView view;
+  
+  view.location = location.Pack();
+  view.altitude = altitude.Pack();
+  view.numSatellites = numSatellites.Pack();
+
+  return view;
+}
+
+GPSStatus& GPSStatus::Unpack(GPSStatus::NetworkView view) {
+  location.Unpack(view.location);
+  altitude.Unpack(view.altitude);
+  numSatellites.Unpack(view.numSatellites);
+
+  return *this;
+}
+
+void GPSStatus::MarkStale() {
+  location.MarkStale();
+  altitude.MarkStale();
+  numSatellites.MarkStale();
+}
+
+void GPSStatus::MarkInvalid() {
+  location.MarkInvalid();
+  altitude.MarkInvalid();
+  numSatellites.MarkInvalid();
+}
+
+bool GPSStatus::Valid() {
+  return location.Valid() && altitude.Valid() && numSatellites.Valid();
+}
+
+bool GPSStatus::Updated() {
+  return location.Updated() || altitude.Updated() || numSatellites.Updated();
+}
+

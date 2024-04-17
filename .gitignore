@@ -1,6 +1,6 @@
 *.o
 *.a
 *.so
-bin/*
+#bin/*
 obj/*
 lib/*

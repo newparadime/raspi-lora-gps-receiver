@@ -1,5 +1,5 @@
 #include <LoRa.h>
-#include "GPSLocation.h"
+#include "GPSStatus.h"
 #include <iostream>
 #include <iomanip>
 #include <chrono>
@@ -15,32 +15,32 @@ int main(void) {
   }
 
   while(true) {
-    GPSLocation::NetworkView view;
+    GPSStatus::NetworkView view;
     uint8_t* viewBuffer = (uint8_t*)&view;
 
-    size_t bytesReady = LoRa.parsePacket(sizeof(GPSLocation::NetworkView));
+    size_t bytesReady = LoRa.parsePacket(sizeof(GPSStatus::NetworkView));
     size_t bytesReceived;
-    if (bytesReady == sizeof(GPSLocation::NetworkView)) {
-      for(bytesReceived = 0; bytesReceived < sizeof(GPSLocation::NetworkView) && LoRa.available(); bytesReceived++) {
+    if (bytesReady == sizeof(GPSStatus::NetworkView)) {
+      for(bytesReceived = 0; bytesReceived < sizeof(GPSStatus::NetworkView) && LoRa.available(); bytesReceived++) {
         viewBuffer[bytesReceived] = (char)LoRa.read();
       }
 
-      if (bytesReceived == sizeof(GPSLocation::NetworkView)) {
-        GPSLocation location;
-        location.Unpack(view);
+      if (bytesReceived == sizeof(GPSStatus::NetworkView)) {
+        GPSStatus status;
+        status.Unpack(view);
 
         std::cout << "Received valid GPS data packet:\n"
-                  << "  latitude     : " << location.latitude << std::endl
-                  << "  longitude    : " << location.longitude << std::endl
-                  << "  altitude     : " << location.altitude << std::endl
-                  << "  numSatellites: " << location.numSatellites << std::endl;
+                  << "  latitude     : " << status.location.latitude << std::endl
+                  << "  longitude    : " << status.location.longitude << std::endl
+                  << "  altitude     : " << status.altitude << std::endl
+                  << "  numSatellites: " << status.numSatellites << std::endl;
       }
       else {
-        std::cout << "ERROR: Failed to read full packet, expected " << sizeof(GPSLocation::NetworkView) << "bytes, received " << bytesReceived << "bytes\n";
+        std::cout << "ERROR: Failed to read full packet, expected " << sizeof(GPSStatus::NetworkView) << "bytes, received " << bytesReceived << "bytes\n";
       }
     }
     else {
-      std::cout << "ERROR: Malformed packet received, expected " << sizeof(GPSLocation::NetworkView) << "bytes, received " << bytesReceived << "bytes\n";
+      std::cout << "ERROR: Malformed packet received, expected " << sizeof(GPSStatus::NetworkView) << "bytes, received " << bytesReceived << "bytes\n";
     }
     
 
