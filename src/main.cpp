@@ -8,7 +8,7 @@
 using namespace std::literals::chrono_literals;
 
 int main(void) {
-  LoRa.setPins(21, 0, 2);
+  LoRa.setPins(3, 0, 2);
 
   if(!LoRa.begin(433E6)) {
     std::cout << "Could not initialize LoRa\n";
